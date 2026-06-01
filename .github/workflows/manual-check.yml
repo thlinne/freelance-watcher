@@ -62,9 +62,6 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Check compiled output
-        run: cat dist/run-once.js | grep -A2 "Whitelist"
-
       - name: Projekte prüfen & E-Mail senden
         env:
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
