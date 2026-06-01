@@ -3,7 +3,8 @@
   "daysBack": 5,
   "activeHours": { "start": 8, "end": 18 },
   "activeDays": [1, 2, 3, 4, 5, 6],
-  "searchUrl": "https://www.freelancermap.com/projects",
+  "searchUrl": "https://www.freelancermap.com/projects?created=4&excludeDachProjects=false&sort=1&pagenr=1",
+  "daysBack": 4,
   "whitelist": [],
   "blacklist": [],
   "email": {
@@ -14,3 +15,4 @@
     "recipient": "deine@email.de"
   }
 }
+
