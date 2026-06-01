@@ -2,7 +2,7 @@
 # Freelance Watcher – Manueller Check
 # Kann jederzeit im GitHub UI unter Actions → Manual Check ausgelöst werden.
 # Ignoriert Ruhezeiten – läuft immer wenn manuell gestartet.
-# ──────────────────────────────────────────────────────────────────────────────
+# ────────────────────────────────────────────────────────────────────────────── 
 
 name: Manual Check
 
