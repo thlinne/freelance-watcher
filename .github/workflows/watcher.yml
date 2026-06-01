@@ -1,0 +1,81 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# Freelance Watcher – Automatischer Check
+#
+# Läuft alle 30 Minuten, Mo-Sa 8:00-18:00 Uhr (Europe/Berlin)
+# GitHub Actions cron läuft in UTC → Berlin = UTC+2 (Sommer) / UTC+1 (Winter)
+# Hier: UTC 06:00-16:00 = Berlin 08:00-18:00 (Sommerzeit)
+#
+# Cron-Syntax: "*/30 6-15 * * 1-6"
+#   */30  = alle 30 Minuten
+#   6-15  = UTC 6 bis 15 Uhr (= Berlin 8-17 Uhr Sommer; ggf. auf 5-15 für Winter anpassen)
+#   *     = jeden Tag des Monats
+#   *     = jeden Monat
+#   1-6   = Mo(1) bis Sa(6), So(0) ist ausgeschlossen
+# ──────────────────────────────────────────────────────────────────────────────
+
+name: Freelance Watcher
+
+on:
+  schedule:
+    - cron: "0,30 6-15 * * 1-6"   # alle 30 Min, Mo-Sa, UTC 6-15 Uhr
+  workflow_dispatch:                # manuell auslösbar im GitHub UI
+
+jobs:
+  check:
+    name: Projekte prüfen
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Code auschecken
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 2. Node.js einrichten
+      - name: Node.js einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      # 3. seen.json aus Cache laden (projektübergreifend persistent)
+      - name: seen.json aus Cache laden
+        uses: actions/cache@v4
+        with:
+          path: data/seen.json
+          key: seen-json-${{ github.run_id }}
+          restore-keys: |
+            seen-json-
+
+      # 4. seen.json anlegen falls noch nicht vorhanden
+      - name: seen.json initialisieren
+        run: |
+          if [ ! -f data/seen.json ]; then
+            echo "[]" > data/seen.json
+            echo "seen.json neu angelegt"
+          else
+            echo "seen.json geladen ($(cat data/seen.json | python3 -c 'import sys,json; print(len(json.load(sys.stdin)))') Einträge)"
+          fi
+
+      # 5. Dependencies installieren
+      - name: npm install
+        run: npm ci
+
+      # 6. TypeScript kompilieren
+      - name: Build
+        run: npm run build
+
+      # 7. Watcher ausführen
+      - name: Projekte prüfen & E-Mail senden
+        env:
+          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+          EMAIL_USER: ${{ secrets.EMAIL_USER }}
+          EMAIL_RECIPIENT: ${{ secrets.EMAIL_RECIPIENT }}
+        run: node dist/run-once.js
+
+      # 8. seen.json immer speichern (auch wenn Step 7 fehlschlägt)
+      - name: seen.json speichern
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: data/seen.json
+          key: seen-json-${{ github.run_id }}

@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Freelance Watcher</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f0f2f5; color: #333; min-height: 100vh; }
+
+    header { background: #0066cc; color: white; padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; }
+    header h1 { font-size: 20px; font-weight: 600; }
+    header .subtitle { font-size: 13px; opacity: 0.8; margin-top: 2px; }
+
+    .container { max-width: 1100px; margin: 0 auto; padding: 24px 16px; }
+
+    .status-bar { background: white; border-radius: 10px; padding: 16px 24px; display: flex; align-items: center; gap: 24px; flex-wrap: wrap; margin-bottom: 20px; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+    .status-item { display: flex; flex-direction: column; }
+    .status-label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: .5px; }
+    .status-value { font-size: 15px; font-weight: 600; margin-top: 2px; }
+
+    .notice-banner { background: #fff8e1; border: 1px solid #ffe082; color: #7a5c00; border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; font-size: 14px; }
+    .error-banner { background: #fff0f0; border: 1px solid #ffcccc; color: #cc0000; border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; font-size: 14px; display: none; }
+
+    .badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+    .badge-new { background: #e6f4ea; color: #1a7f37; }
+    .badge-seen { background: #f0f0f0; color: #888; }
+    .badge-waiting { background: #fff8e1; color: #7a5c00; }
+    .badge-active { background: #e6f4ea; color: #1a7f37; }
+
+    .btn { padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-size: 14px; font-weight: 600; transition: opacity .15s; }
+    .btn:hover { opacity: .85; }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-primary { background: #0066cc; color: white; }
+    .btn-secondary { background: #e8e8e8; color: #333; }
+    .btn-success { background: #1a7f37; color: white; }
+    .btn-danger { background: #fff0f0; color: #cc0000; border: 1px solid #ffcccc; }
+
+    .actions { display: flex; gap: 10px; margin-left: auto; flex-wrap: wrap; }
+
+    .tabs { display: flex; gap: 4px; margin-bottom: 16px; }
+    .tab { padding: 8px 18px; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 14px; font-weight: 500; background: #e0e4ea; color: #555; border: none; }
+    .tab.active { background: white; color: #0066cc; font-weight: 600; }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    .card { background: white; border-radius: 0 10px 10px 10px; box-shadow: 0 1px 4px rgba(0,0,0,.08); overflow: hidden; }
+
+    table { width: 100%; border-collapse: collapse; }
+    thead tr { background: #f7f8fa; }
+    th { padding: 12px 14px; text-align: left; font-size: 12px; text-transform: uppercase; color: #888; letter-spacing: .4px; }
+    td { padding: 12px 14px; font-size: 14px; border-top: 1px solid #f0f0f0; vertical-align: top; }
+    tr:hover td { background: #fafcff; }
+    .project-title a { color: #0066cc; text-decoration: none; font-weight: 600; }
+    .project-title a:hover { text-decoration: underline; }
+    .empty { padding: 48px; text-align: center; color: #aaa; font-size: 15px; }
+
+    .config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 24px; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group label { font-size: 13px; font-weight: 600; color: #555; }
+    .form-group input, .form-group textarea, .form-group select {
+      padding: 9px 12px; border: 1px solid #ddd; border-radius: 7px; font-size: 14px; font-family: inherit; transition: border-color .15s;
+    }
+    .form-group input:focus, .form-group textarea:focus { outline: none; border-color: #0066cc; }
+    .form-group textarea { resize: vertical; min-height: 80px; }
+    .form-group .hint { font-size: 11px; color: #aaa; }
+    .full-width { grid-column: 1 / -1; }
+
+    .days-picker { display: flex; gap: 8px; flex-wrap: wrap; }
+    .day-btn {
+      width: 40px; height: 40px; border-radius: 50%; border: 2px solid #ddd;
+      background: white; cursor: pointer; font-size: 13px; font-weight: 600; color: #888;
+      transition: all .15s;
+    }
+    .day-btn.active { background: #0066cc; border-color: #0066cc; color: white; }
+
+    .hours-row { display: flex; align-items: center; gap: 12px; }
+    .hours-row input { width: 80px; }
+
+    .config-actions { grid-column: 1 / -1; display: flex; gap: 10px; padding-top: 8px; border-top: 1px solid #f0f0f0; align-items: center; }
+    .save-feedback { font-size: 13px; color: #1a7f37; display: none; }
+
+    .danger-zone { grid-column: 1 / -1; background: #fff8f8; border: 1px solid #ffdddd; border-radius: 8px; padding: 16px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+    .danger-zone-text { font-size: 13px; color: #666; }
+    .danger-zone-text strong { color: #cc0000; display: block; margin-bottom: 4px; }
+
+    .section-title { grid-column: 1 / -1; font-size: 13px; font-weight: 700; color: #0066cc; text-transform: uppercase; letter-spacing: .5px; padding-top: 8px; border-top: 1px solid #f0f0f0; margin-top: 4px; }
+
+    .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.4); border-top-color: white; border-radius: 50%; animation: spin .6s linear infinite; margin-right: 6px; vertical-align: middle; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>🔍 Freelance Watcher</h1>
+    <div class="subtitle">Freelancermap Projekt-Monitor</div>
+  </div>
+</header>
+
+<div class="container">
+
+  <div class="notice-banner" id="noticeBanner">
+    ⚙️ <strong>Bereit.</strong> Bitte Einstellungen prüfen und dann auf <strong>„Jetzt prüfen"</strong> klicken um den ersten Check zu starten.
+  </div>
+  <div class="error-banner" id="errorBanner"></div>
+
+  <!-- Status Bar -->
+  <div class="status-bar">
+    <div class="status-item">
+      <span class="status-label">Letzter Check</span>
+      <span class="status-value" id="lastCheck">–</span>
+    </div>
+    <div class="status-item">
+      <span class="status-label">Intervall</span>
+      <span class="status-value" id="interval">–</span>
+    </div>
+    <div class="status-item">
+      <span class="status-label">Zeitraum</span>
+      <span class="status-value" id="daysBack">–</span>
+    </div>
+    <div class="status-item">
+      <span class="status-label">Aktiv</span>
+      <span class="status-value" id="activeTime">–</span>
+    </div>
+    <div class="status-item">
+      <span class="status-label">Treffer</span>
+      <span class="status-value" id="resultCount">–</span>
+    </div>
+    <div class="status-item">
+      <span class="status-label">Neu</span>
+      <span class="status-value" id="newCount">–</span>
+    </div>
+    <div class="status-item">
+      <span class="status-label">Auto-Check</span>
+      <span class="status-value" id="schedulerStatus"><span class="badge badge-waiting">Wartet</span></span>
+    </div>
+    <div class="actions">
+      <button class="btn btn-primary" id="checkBtn" onclick="runCheck()">▶ Jetzt prüfen</button>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('results', this)">Ergebnisse</button>
+    <button class="tab" onclick="showTab('config', this)">Einstellungen</button>
+  </div>
+
+  <!-- Tab: Results -->
+  <div class="tab-content active card" id="tab-results">
+    <table>
+      <thead>
+        <tr>
+          <th>Status</th><th>Titel</th><th>Unternehmen</th><th>Ort</th><th>Typ</th><th>Start</th>
+        </tr>
+      </thead>
+      <tbody id="resultsBody">
+        <tr><td colspan="6" class="empty">Noch kein Check – bitte „Jetzt prüfen" klicken.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Tab: Config -->
+  <div class="tab-content card" id="tab-config">
+    <div class="config-grid">
+
+      <div class="section-title">⏱ Zeitsteuerung</div>
+
+      <div class="form-group">
+        <label>Intervall (Minuten)</label>
+        <input type="number" id="cfg-intervalMinutes" min="1" max="1440" />
+        <span class="hint">Wie oft automatisch prüfen?</span>
+      </div>
+
+      <div class="form-group">
+        <label>Zeitraum (Tage zurück)</label>
+        <input type="number" id="cfg-daysBack" min="1" max="30" />
+        <span class="hint">Nur Projekte der letzten X Tage</span>
+      </div>
+
+      <div class="form-group">
+        <label>Aktive Stunden</label>
+        <div class="hours-row">
+          <input type="number" id="cfg-hoursStart" min="0" max="23" placeholder="8" />
+          <span>bis</span>
+          <input type="number" id="cfg-hoursEnd" min="1" max="24" placeholder="18" />
+          <span>Uhr</span>
+        </div>
+        <span class="hint">Außerhalb dieser Zeit werden automatische Checks übersprungen</span>
+      </div>
+
+      <div class="form-group">
+        <label>Aktive Tage</label>
+        <div class="days-picker">
+          <button class="day-btn" data-day="1" onclick="toggleDay(this)">Mo</button>
+          <button class="day-btn" data-day="2" onclick="toggleDay(this)">Di</button>
+          <button class="day-btn" data-day="3" onclick="toggleDay(this)">Mi</button>
+          <button class="day-btn" data-day="4" onclick="toggleDay(this)">Do</button>
+          <button class="day-btn" data-day="5" onclick="toggleDay(this)">Fr</button>
+          <button class="day-btn" data-day="6" onclick="toggleDay(this)">Sa</button>
+          <button class="day-btn" data-day="0" onclick="toggleDay(this)">So</button>
+        </div>
+        <span class="hint">Blau = aktiv</span>
+      </div>
+
+      <div class="section-title">🔍 Suche</div>
+
+      <div class="form-group full-width">
+        <label>Such-URL (Basis)</label>
+        <input type="text" id="cfg-searchUrl" />
+        <span class="hint">„created" wird automatisch durch „Tage zurück" ersetzt</span>
+      </div>
+
+      <div class="form-group">
+        <label>Whitelist (ein Keyword pro Zeile)</label>
+        <textarea id="cfg-whitelist" rows="6"></textarea>
+        <span class="hint">Mindestens eines muss vorkommen (leer = alles)</span>
+      </div>
+
+      <div class="form-group">
+        <label>Blacklist (ein Keyword pro Zeile)</label>
+        <textarea id="cfg-blacklist" rows="6"></textarea>
+        <span class="hint">Projekte mit diesen Keywords werden ausgeschlossen</span>
+      </div>
+
+      <div class="section-title">📧 E-Mail</div>
+
+      <div class="form-group">
+        <label>SMTP Host</label>
+        <input type="text" id="cfg-smtpHost" />
+      </div>
+      <div class="form-group">
+        <label>SMTP Port</label>
+        <input type="number" id="cfg-smtpPort" />
+      </div>
+      <div class="form-group">
+        <label>Absender</label>
+        <input type="email" id="cfg-user" />
+      </div>
+      <div class="form-group">
+        <label>Passwort</label>
+        <input type="password" id="cfg-password" placeholder="(leer = .env Wert bleibt)" />
+        <span class="hint">Wird nur in .env gespeichert</span>
+      </div>
+      <div class="form-group">
+        <label>Empfänger</label>
+        <input type="email" id="cfg-recipient" />
+      </div>
+
+      <div class="config-actions">
+        <button class="btn btn-success" onclick="saveConfig()">💾 Speichern</button>
+        <button class="btn btn-secondary" onclick="loadConfigUI()">↺ Zurücksetzen</button>
+        <span class="save-feedback" id="saveFeedback">✓ Gespeichert</span>
+      </div>
+
+      <div class="danger-zone">
+        <div class="danger-zone-text">
+          <strong>🗑 Gesehene Projekte zurücksetzen</strong>
+          Alle Projekte werden beim nächsten Check wieder als „neu" behandelt. Nützlich nach Änderung der Whitelist.
+        </div>
+        <button class="btn btn-danger" onclick="resetSeen()">Zurücksetzen</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  const DAY_NAMES = ['So','Mo','Di','Mi','Do','Fr','Sa'];
+
+  function showTab(name, btn) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    btn.classList.add('active');
+    if (name === 'config') loadConfigUI();
+  }
+
+  function toggleDay(btn) {
+    btn.classList.toggle('active');
+  }
+
+  async function refreshStatus() {
+    try {
+      const res = await fetch('/api/status');
+      const data = await res.json();
+
+      document.getElementById('lastCheck').textContent = data.lastCheckTime || '–';
+      document.getElementById('interval').textContent = data.intervalMinutes + ' min';
+      document.getElementById('daysBack').textContent = data.daysBack + ' Tage';
+      document.getElementById('resultCount').textContent = data.resultCount ?? '–';
+      document.getElementById('newCount').textContent = data.newCount ?? '–';
+
+      if (data.activeHours && data.activeDays) {
+        const days = data.activeDays.map(d => DAY_NAMES[d]).join(', ');
+        document.getElementById('activeTime').textContent =
+          `${data.activeHours.start}–${data.activeHours.end} Uhr (${days})`;
+      }
+
+      const schedulerEl = document.getElementById('schedulerStatus');
+      schedulerEl.innerHTML = data.schedulerStarted
+        ? '<span class="badge badge-active">Aktiv</span>'
+        : '<span class="badge badge-waiting">Wartet</span>';
+
+      document.getElementById('noticeBanner').style.display =
+        data.lastCheckTime === '–' ? 'block' : 'none';
+
+      const banner = document.getElementById('errorBanner');
+      if (data.lastError) {
+        banner.textContent = '⚠ Fehler: ' + data.lastError;
+        banner.style.display = 'block';
+      } else {
+        banner.style.display = 'none';
+      }
+    } catch(e) { console.error(e); }
+  }
+
+  async function refreshResults() {
+    try {
+      const res = await fetch('/api/results');
+      const data = await res.json();
+      const tbody = document.getElementById('resultsBody');
+      if (!data.length) {
+        tbody.innerHTML = '<tr><td colspan="6" class="empty">Keine Treffer für aktuelle Filter.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = data.map(({ project: p, isNew }) => `
+        <tr>
+          <td><span class="badge ${isNew ? 'badge-new' : 'badge-seen'}">${isNew ? '🆕 Neu' : 'Gesehen'}</span></td>
+          <td class="project-title"><a href="${p.url}" target="_blank">${p.title}</a></td>
+          <td>${p.company}</td>
+          <td>${p.location}</td>
+          <td>${p.contractType}</td>
+          <td>${p.start}</td>
+        </tr>`).join('');
+    } catch(e) { console.error(e); }
+  }
+
+  async function runCheck() {
+    const btn = document.getElementById('checkBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>Prüfe…';
+    try {
+      await fetch('/api/check', { method: 'POST' });
+      await Promise.all([refreshStatus(), refreshResults()]);
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '▶ Jetzt prüfen';
+    }
+  }
+
+  async function loadConfigUI() {
+    const res = await fetch('/api/config');
+    const cfg = await res.json();
+    document.getElementById('cfg-intervalMinutes').value = cfg.intervalMinutes;
+    document.getElementById('cfg-daysBack').value = cfg.daysBack ?? 5;
+    document.getElementById('cfg-searchUrl').value = cfg.searchUrl;
+    document.getElementById('cfg-whitelist').value = (cfg.whitelist || []).join('\n');
+    document.getElementById('cfg-blacklist').value = (cfg.blacklist || []).join('\n');
+    document.getElementById('cfg-smtpHost').value = cfg.email?.smtpHost || '';
+    document.getElementById('cfg-smtpPort').value = cfg.email?.smtpPort || 465;
+    document.getElementById('cfg-user').value = cfg.email?.user || '';
+    document.getElementById('cfg-recipient').value = cfg.email?.recipient || '';
+    document.getElementById('cfg-hoursStart').value = cfg.activeHours?.start ?? 8;
+    document.getElementById('cfg-hoursEnd').value = cfg.activeHours?.end ?? 18;
+
+    // Set day buttons
+    document.querySelectorAll('.day-btn').forEach(btn => {
+      const day = parseInt(btn.getAttribute('data-day'));
+      btn.classList.toggle('active', (cfg.activeDays || []).includes(day));
+    });
+  }
+
+  async function saveConfig() {
+    const res = await fetch('/api/config');
+    const current = await res.json();
+    const passwordField = document.getElementById('cfg-password').value;
+
+    const activeDays = [];
+    document.querySelectorAll('.day-btn.active').forEach(btn => {
+      activeDays.push(parseInt(btn.getAttribute('data-day')));
+    });
+
+    const updated = {
+      intervalMinutes: parseInt(document.getElementById('cfg-intervalMinutes').value),
+      daysBack: parseInt(document.getElementById('cfg-daysBack').value),
+      activeHours: {
+        start: parseInt(document.getElementById('cfg-hoursStart').value),
+        end: parseInt(document.getElementById('cfg-hoursEnd').value),
+      },
+      activeDays,
+      searchUrl: document.getElementById('cfg-searchUrl').value.trim(),
+      whitelist: document.getElementById('cfg-whitelist').value.split('\n').map(s => s.trim()).filter(Boolean),
+      blacklist: document.getElementById('cfg-blacklist').value.split('\n').map(s => s.trim()).filter(Boolean),
+      email: {
+        smtpHost: document.getElementById('cfg-smtpHost').value.trim(),
+        smtpPort: parseInt(document.getElementById('cfg-smtpPort').value),
+        user: document.getElementById('cfg-user').value.trim(),
+        password: passwordField || current.email.password,
+        recipient: document.getElementById('cfg-recipient').value.trim(),
+      }
+    };
+
+    const saveRes = await fetch('/api/config', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updated)
+    });
+    if (saveRes.ok) {
+      const feedback = document.getElementById('saveFeedback');
+      feedback.style.display = 'inline';
+      setTimeout(() => feedback.style.display = 'none', 3000);
+      document.getElementById('cfg-password').value = '';
+      refreshStatus();
+    }
+  }
+
+  async function resetSeen() {
+    if (!confirm('Wirklich zurücksetzen?\nBeim nächsten Check wird für alle Treffer eine E-Mail gesendet.')) return;
+    const res = await fetch('/api/reset-seen', { method: 'POST' });
+    if (res.ok) { await refreshResults(); alert('✓ Zurückgesetzt'); }
+  }
+
+  refreshStatus();
+  refreshResults();
+  setInterval(() => { refreshStatus(); refreshResults(); }, 30000);
+</script>
+</body>
+</html>

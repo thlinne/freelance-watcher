@@ -1,0 +1,74 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# Freelance Watcher – Manueller Check
+# Kann jederzeit im GitHub UI unter Actions → Manual Check ausgelöst werden.
+# Ignoriert Ruhezeiten – läuft immer wenn manuell gestartet.
+# ──────────────────────────────────────────────────────────────────────────────
+
+name: Manual Check
+
+on:
+  workflow_dispatch:
+    inputs:
+      reset_seen:
+        description: "seen.json zurücksetzen? (alle Projekte als neu behandeln)"
+        required: false
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
+
+jobs:
+  manual-check:
+    name: Manueller Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node.js einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: seen.json aus Cache laden
+        uses: actions/cache@v4
+        with:
+          path: data/seen.json
+          key: seen-json-${{ github.run_id }}
+          restore-keys: |
+            seen-json-
+
+      - name: seen.json initialisieren oder zurücksetzen
+        run: |
+          if [ "${{ github.event.inputs.reset_seen }}" = "true" ]; then
+            echo "[]" > data/seen.json
+            echo "seen.json zurückgesetzt"
+          elif [ ! -f data/seen.json ]; then
+            echo "[]" > data/seen.json
+            echo "seen.json neu angelegt"
+          else
+            echo "seen.json geladen"
+          fi
+
+      - name: npm install
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Projekte prüfen & E-Mail senden
+        env:
+          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+          EMAIL_USER: ${{ secrets.EMAIL_USER }}
+          EMAIL_RECIPIENT: ${{ secrets.EMAIL_RECIPIENT }}
+        run: node dist/run-once.js
+
+      - name: seen.json speichern
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: data/seen.json
+          key: seen-json-${{ github.run_id }}

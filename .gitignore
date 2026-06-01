@@ -1,0 +1,9 @@
+# Secrets – niemals ins Repository!
+.env
+
+# Laufzeit-Daten
+data/seen.json
+
+# Build-Output
+dist/
+node_modules/
