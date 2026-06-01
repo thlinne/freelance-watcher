@@ -5,7 +5,7 @@
   "activeDays": [1, 2, 3, 4, 5, 6],
   "searchUrl": "https://www.freelancermap.com/projects?excludeDachProjects=true&sort=1&pagenr=1",
   "whitelist": [],
-  "blacklist": ["ANÜ", "Junior"],
+  "blacklist": [],
   "email": {
     "smtpHost": "smtp.strato.de",
     "smtpPort": 465,
