@@ -56,6 +56,9 @@ jobs:
       - name: npm install
         run: npm ci
 
+      - name: Clean dist
+        run: rm -rf dist/
+
       - name: Build
         run: npm run build
 
