@@ -18,8 +18,6 @@ async function main(): Promise<void> {
   console.log(`[run-once] Start: ${new Date().toISOString()}`);
 
   const config = loadConfig();
-  console.log(`[run-once] Whitelist: ${JSON.stringify(config.whitelist)}`);
-  console.log(`[run-once] Blacklist: ${JSON.stringify(config.blacklist)}`);
   const projects = await scrapeProjects(config.searchUrl, config.daysBack);
   console.log(`[run-once] ${projects.length} Projekte gefunden`);
 
